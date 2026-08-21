@@ -89,10 +89,14 @@
                     </div>
 
                     <!-- Right Quick Actions -->
-                    <div class="hidden sm:flex items-center space-x-2">
-                        <button id="favoriteToggleBtn" class="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium transition-all">
+                    <div class="flex items-center space-x-2">
+                        <button id="favoriteToggleBtn" class="flex items-center space-x-1.5 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs sm:text-sm font-medium transition-all">
                             <i class="fa-solid fa-heart text-rose-500"></i>
-                            <span>我的收藏</span>
+                            <span class="hidden sm:inline">我的收藏</span>
+                        </button>
+                        <button onclick="openEditModal()" class="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium shadow-md shadow-blue-500/20 transition-all">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>新增 / 管理網址</span>
                         </button>
                     </div>
 
@@ -103,9 +107,15 @@
         <!-- Main Content Area -->
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             
-            <!-- Category Filter Pills -->
-            <div class="flex items-center space-x-2 overflow-x-auto pb-4 scrollbar-none" id="categoryContainer">
-                <!-- Dynamically Populated Categories -->
+            <!-- Category Filter Pills & Reset Data Button -->
+            <div class="flex items-center justify-between gap-2 pb-4 overflow-x-auto scrollbar-none">
+                <div class="flex items-center space-x-2 shrink-0" id="categoryContainer">
+                    <!-- Dynamically Populated Categories -->
+                </div>
+                <button onclick="resetToDefaultData()" title="重置為初始預設小程式" class="text-xs text-slate-400 hover:text-rose-500 flex items-center space-x-1 px-2.5 py-1.5 rounded-lg hover:bg-rose-50 transition-all shrink-0">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span class="hidden md:inline">重置預設</span>
+                </button>
             </div>
 
             <!-- Mini Apps Grid Container -->
@@ -167,6 +177,95 @@
         </div>
     </div>
 
+    <!-- Add / Edit App Modal -->
+    <div id="editAppModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden transform scale-95 transition-all duration-300" id="editModalCard">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-base font-bold">
+                        <i class="fa-solid fa-pen-to-square" id="editModalHeaderIcon"></i>
+                    </div>
+                    <div>
+                        <h3 id="editModalTitle" class="text-base font-bold text-slate-800">新增小程式</h3>
+                        <p class="text-[11px] text-slate-400">自訂名稱與連結網址</p>
+                    </div>
+                </div>
+                <button onclick="closeEditModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-all">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="appForm" onsubmit="handleFormSubmit(event)" class="p-5 space-y-4 text-left">
+                <input type="hidden" id="editAppId" value="">
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">程式名稱 <span class="text-rose-500">*</span></label>
+                    <input type="text" id="appNameInput" required placeholder="例如：功課紀錄表" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition-all">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">網址 (URL)</label>
+                    <input type="url" id="appUrlInput" placeholder="https://example.com" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:bg-white transition-all">
+                    <p class="text-[10px] text-slate-400 mt-1">若未填寫網址，則以預設展示視窗開啟</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">分類</label>
+                        <select id="appCategorySelect" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 focus:bg-white transition-all">
+                            <option value="tools">實用工具</option>
+                            <option value="productivity">工作效率</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">圖示代碼</label>
+                        <input type="text" id="appIconInput" value="fa-cube" placeholder="fa-cube" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 focus:bg-white transition-all">
+                    </div>
+                </div>
+
+                <!-- Icon Quick Selector -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">點擊快速挑選圖示</label>
+                    <div class="flex flex-wrap gap-2 text-slate-600">
+                        <button type="button" onclick="selectPresetIcon('fa-magnifying-glass')" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-all text-xs"><i class="fa-solid fa-magnifying-glass"></i></button>
+                        <button type="button" onclick="selectPresetIcon('fa-list-check')" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-all text-xs"><i class="fa-solid fa-list-check"></i></button>
+                        <button type="button" onclick="selectPresetIcon('fa-shirt')" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-all text-xs"><i class="fa-solid fa-shirt"></i></button>
+                        <button type="button" onclick="selectPresetIcon('fa-calendar-days')" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-all text-xs"><i class="fa-solid fa-calendar-days"></i></button>
+                        <button type="button" onclick="selectPresetIcon('fa-clock')" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-all text-xs"><i class="fa-solid fa-clock"></i></button>
+                        <button type="button" onclick="selectPresetIcon('fa-bell')" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-all text-xs"><i class="fa-solid fa-bell"></i></button>
+                        <button type="button" onclick="selectPresetIcon('fa-gears')" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-all text-xs"><i class="fa-solid fa-gears"></i></button>
+                        <button type="button" onclick="selectPresetIcon('fa-link')" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-all text-xs"><i class="fa-solid fa-link"></i></button>
+                        <button type="button" onclick="selectPresetIcon('fa-graduation-cap')" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-all text-xs"><i class="fa-solid fa-graduation-cap"></i></button>
+                        <button type="button" onclick="selectPresetIcon('fa-qrcode')" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-all text-xs"><i class="fa-solid fa-qrcode"></i></button>
+                    </div>
+                </div>
+
+                <!-- Theme Color Selector -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">主題漸層色彩</label>
+                    <input type="hidden" id="appColorInput" value="from-blue-500 to-indigo-600">
+                    <div class="grid grid-cols-4 gap-2" id="colorPickerContainer">
+                        <!-- Dynamic Color Swatches -->
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <button type="button" id="deleteAppBtn" onclick="confirmDeleteApp()" class="px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-semibold transition-all hidden">
+                        <i class="fa-solid fa-trash mr-1"></i>刪除程式
+                    </button>
+                    <div class="flex items-center space-x-2 ml-auto">
+                        <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold rounded-xl transition-all">
+                            取消
+                        </button>
+                        <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-md transition-all">
+                            儲存變更
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="bg-white border-t border-slate-100 py-6 mt-12">
         <div class="max-w-7xl mx-auto px-4 text-center text-slate-400 text-xs">
@@ -175,28 +274,28 @@
     </footer>
 
     <script>
-        // Mini-Apps Data Source
-        const MINI_APPS = [
-            { id: 1, name: '空節搜尋器', category: 'tools', icon: 'fa-calculator', color: 'from-blue-500 to-indigo-600' },
-            { id: 2, name: '代課安排', category: 'productivity', icon: 'fa-list-check', color: 'from-emerald-500 to-teal-600' },
-            { id: 3, name: '調課安排', category: 'lifestyle', icon: 'fa-cloud-sun', color: 'from-sky-400 to-blue-600' },
-            { id: 4, name: '考試時間表', category: 'tools', icon: 'fa-arrow-right-arrow-left', color: 'from-violet-500 to-purple-600' },
-            { id: 5, name: '活動週時間表', category: 'finance', icon: 'fa-coins', color: 'from-amber-500 to-orange-600' },
-            { id: 6, name: '校服排隊系統', category: 'tools', icon: 'fa-dice', color: 'from-rose-500 to-pink-600' },
-            { id: 7, name: '工作提示器', category: 'productivity', icon: 'fa-stopwatch', color: 'from-red-500 to-rose-600' },
-            { id: 8, name: 'whatsform通知系統', category: 'finance', icon: 'fa-wallet', color: 'from-green-500 to-emerald-600' },
-            { id: 9, name: '待定', category: 'health', icon: 'fa-heart-pulse', color: 'from-pink-500 to-rose-500' },
-            { id: 10, name: '待定', category: 'tools', icon: 'fa-qrcode', color: 'from-slate-700 to-slate-900' },
-            { id: 11, name: '待定', category: 'productivity', icon: 'fa-note-sticky', color: 'from-yellow-400 to-amber-500' },
-            { id: 12, name: '待定', category: 'lifestyle', icon: 'fa-moon', color: 'from-indigo-600 to-slate-800' },
-            { id: 13, name: '待定', category: 'tools', icon: 'fa-key', color: 'from-cyan-500 to-blue-600' },
-            { id: 14, name: '待定', category: 'entertainment', icon: 'fa-wand-magic-sparkles', color: 'from-purple-600 to-indigo-700' },
-            { id: 15, name: '待定', category: 'entertainment', icon: 'fa-music', color: 'from-fuchsia-500 to-pink-600' },
-            { id: 16, name: '待定', category: 'lifestyle', icon: 'fa-calendar-check', color: 'from-teal-400 to-emerald-600' },
-            { id: 17, name: '待定', category: 'tools', icon: 'fa-palette', color: 'from-orange-400 to-rose-500' },
-            { id: 18, name: '待定', category: 'tools', icon: 'fa-gauge-high', color: 'from-blue-600 to-cyan-500' },
-            { id: 19, name: '待定', category: 'health', icon: 'fa-glass-water', color: 'from-sky-400 to-blue-500' },
-            { id: 20, name: '待定', category: 'entertainment', icon: 'fa-dharmachakra', color: 'from-purple-500 to-pink-500' }
+        // Initial Default Mini-Apps Data Source
+        const DEFAULT_MINI_APPS = [
+            { id: 1, name: '空節搜尋器', category: 'tools', icon: 'fa-magnifying-glass', color: 'from-blue-500 to-indigo-600', url: 'https://junesham2026.github.io/free_lesson_lookup/' },
+            { id: 2, name: '代課安排', category: 'productivity', icon: 'fa-list-check', color: 'from-emerald-500 to-teal-600', url: '' },
+            { id: 3, name: '調課安排', category: 'productivity', icon: 'fa-cloud-sun', color: 'from-sky-400 to-blue-600', url: '' },
+            { id: 4, name: '考試時間表', category: 'tools', icon: 'fa-arrow-right-arrow-left', color: 'from-violet-500 to-purple-600', url: '' },
+            { id: 5, name: '活動週時間表', category: 'tools', icon: 'fa-coins', color: 'from-amber-500 to-orange-600', url: '' },
+            { id: 6, name: '校服排隊系統', category: 'tools', icon: 'fa-shirt', color: 'from-rose-500 to-pink-600', url: 'https://junesham2026.github.io/uniform/' },
+            { id: 7, name: '工作提示器', category: 'productivity', icon: 'fa-stopwatch', color: 'from-red-500 to-rose-600', url: '' },
+            { id: 8, name: 'whatsform通知系統', category: 'productivity', icon: 'fa-wallet', color: 'from-green-500 to-emerald-600', url: '' }
+        ];
+
+        // Color Swatches Configuration
+        const COLOR_SWATCHES = [
+            { id: 'blue', val: 'from-blue-500 to-indigo-600', bg: 'bg-gradient-to-r from-blue-500 to-indigo-600' },
+            { id: 'emerald', val: 'from-emerald-500 to-teal-600', bg: 'bg-gradient-to-r from-emerald-500 to-teal-600' },
+            { id: 'sky', val: 'from-sky-400 to-blue-600', bg: 'bg-gradient-to-r from-sky-400 to-blue-600' },
+            { id: 'purple', val: 'from-violet-500 to-purple-600', bg: 'bg-gradient-to-r from-violet-500 to-purple-600' },
+            { id: 'amber', val: 'from-amber-500 to-orange-600', bg: 'bg-gradient-to-r from-amber-500 to-orange-600' },
+            { id: 'rose', val: 'from-rose-500 to-pink-600', bg: 'bg-gradient-to-r from-rose-500 to-pink-600' },
+            { id: 'teal', val: 'from-teal-400 to-emerald-600', bg: 'bg-gradient-to-r from-teal-400 to-emerald-600' },
+            { id: 'dark', val: 'from-slate-700 to-slate-900', bg: 'bg-gradient-to-r from-slate-700 to-slate-900' }
         ];
 
         // Categories Configuration
@@ -204,8 +303,26 @@
             { id: 'all', name: '全部程式', icon: 'fa-border-all' },
             { id: 'tools', name: '實用工具', icon: 'fa-wrench' },
             { id: 'productivity', name: '工作效率', icon: 'fa-briefcase' },
-        
         ];
+
+        // Load persistent or default app dataset
+        let MINI_APPS = loadSavedApps();
+
+        function loadSavedApps() {
+            const saved = localStorage.getItem('portal_custom_apps');
+            if (saved) {
+                try {
+                    return JSON.parse(saved);
+                } catch(e) {
+                    console.error("Failed to load saved apps", e);
+                }
+            }
+            return [...DEFAULT_MINI_APPS];
+        }
+
+        function saveAppsToStorage() {
+            localStorage.setItem('portal_custom_apps', JSON.stringify(MINI_APPS));
+        }
 
         // App State
         let currentCategory = 'all';
@@ -222,7 +339,7 @@
         const resetFilterBtn = document.getElementById('resetFilterBtn');
         const favoriteToggleBtn = document.getElementById('favoriteToggleBtn');
 
-        // Modal Elements
+        // Modal Elements (Launcher)
         const appModal = document.getElementById('appModal');
         const modalCard = document.getElementById('modalCard');
         const closeModalBtn = document.getElementById('closeModalBtn');
@@ -232,6 +349,44 @@
         const modalIcon = document.getElementById('modalIcon');
         const modalBodyIcon = document.getElementById('modalBodyIcon');
         const modalAppNameSpan = document.getElementById('modalAppNameSpan');
+
+        // Modal Elements (Edit / Management)
+        const editAppModal = document.getElementById('editAppModal');
+        const editModalCard = document.getElementById('editModalCard');
+        const editModalTitle = document.getElementById('editModalTitle');
+        const editAppId = document.getElementById('editAppId');
+        const appNameInput = document.getElementById('appNameInput');
+        const appUrlInput = document.getElementById('appUrlInput');
+        const appCategorySelect = document.getElementById('appCategorySelect');
+        const appIconInput = document.getElementById('appIconInput');
+        const appColorInput = document.getElementById('appColorInput');
+        const deleteAppBtn = document.getElementById('deleteAppBtn');
+
+        // Render Color Selector Swatches in Modal
+        function renderColorPicker() {
+            const container = document.getElementById('colorPickerContainer');
+            const currentColor = appColorInput.value;
+            container.innerHTML = COLOR_SWATCHES.map(s => {
+                const isSelected = currentColor === s.val;
+                return `
+                    <button 
+                        type="button" 
+                        onclick="selectColorSwatch('${s.val}')" 
+                        class="h-8 rounded-xl ${s.bg} flex items-center justify-center text-white transition-transform hover:scale-105 ${isSelected ? 'ring-2 ring-offset-2 ring-blue-600 scale-105' : ''}">
+                        ${isSelected ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        window.selectColorSwatch = function(val) {
+            appColorInput.value = val;
+            renderColorPicker();
+        };
+
+        window.selectPresetIcon = function(iconClass) {
+            appIconInput.value = iconClass;
+        };
 
         // Render Category Tabs
         function renderCategories() {
@@ -284,28 +439,44 @@
             // Generate App Cards Grid
             appsGrid.innerHTML = filtered.map(app => {
                 const isFav = favorites.includes(app.id);
+                const hasUrl = app.url && app.url.trim().length > 0;
+                
                 return `
                     <div class="app-card bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100 flex flex-col justify-between items-center text-center group relative overflow-hidden">
                         
-                        <!-- Favorite Button (Top Right) -->
-                        <button 
-                            onclick="toggleFavorite(event, ${app.id})" 
-                            title="${isFav ? '取消收藏' : '加入收藏'}"
-                            class="absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center transition-all ${
-                                isFav ? 'text-rose-500 bg-rose-50' : 'text-slate-300 hover:text-rose-400 bg-transparent'
-                            }">
-                            <i class="fa-${isFav ? 'solid' : 'regular'} fa-heart text-xs"></i>
-                        </button>
+                        <!-- Quick Action Buttons (Top Left: Edit, Top Right: Favorite) -->
+                        <div class="absolute top-2 left-2 right-2 flex justify-between items-center pointer-events-auto">
+                            <!-- Edit App Button -->
+                            <button 
+                                onclick="openEditModal(event, ${app.id})" 
+                                title="編輯此小程式與連結"
+                                class="w-7 h-7 rounded-full text-slate-300 hover:text-blue-600 hover:bg-blue-50 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
+                                <i class="fa-solid fa-pencil text-xs"></i>
+                            </button>
 
-                        <!-- Icon Badge -->
-                        <div class="w-16 h-16 sm:w-20 sm:h-20 my-2 rounded-2xl bg-gradient-to-tr ${app.color} flex items-center justify-center text-white text-2xl sm:text-3xl shadow-lg shadow-indigo-500/10 group-hover:scale-105 transition-transform duration-300">
-                            <i class="fa-solid ${app.icon}"></i>
+                            <!-- Favorite Button -->
+                            <button 
+                                onclick="toggleFavorite(event, ${app.id})" 
+                                title="${isFav ? '取消收藏' : '加入收藏'}"
+                                class="w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+                                    isFav ? 'text-rose-500 bg-rose-50' : 'text-slate-300 hover:text-rose-400 bg-transparent'
+                                }">
+                                <i class="fa-${isFav ? 'solid' : 'regular'} fa-heart text-xs"></i>
+                            </button>
                         </div>
 
-                        <!-- App Name (No extra intro/description as requested) -->
-                        <h3 class="text-sm font-bold text-slate-800 my-2 truncate w-full px-1">
-                            ${app.name}
-                        </h3>
+                        <!-- Icon Badge -->
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 my-2 rounded-2xl bg-gradient-to-tr ${app.color || 'from-blue-500 to-indigo-600'} flex items-center justify-center text-white text-2xl sm:text-3xl shadow-lg shadow-indigo-500/10 group-hover:scale-105 transition-transform duration-300">
+                            <i class="fa-solid ${app.icon || 'fa-cube'}"></i>
+                        </div>
+
+                        <!-- App Name & External Link Tag -->
+                        <div class="w-full px-1 my-1">
+                            <h3 class="text-sm font-bold text-slate-800 truncate w-full">
+                                ${app.name}
+                            </h3>
+                            ${hasUrl ? '<span class="text-[10px] text-blue-500 font-medium"><i class="fa-solid fa-arrow-up-right-from-square text-[9px] mr-1"></i>外部連結</span>' : '<span class="text-[10px] text-slate-400 font-medium">內建功能</span>'}
+                        </div>
 
                         <!-- Action Button: Enter Mini App -->
                         <button 
@@ -320,6 +491,111 @@
             }).join('');
         }
 
+        // Open Add / Edit Modal
+        window.openEditModal = function(e = null, appId = null) {
+            if (e) e.stopPropagation();
+
+            if (appId) {
+                // Edit Mode
+                const app = MINI_APPS.find(a => a.id === appId);
+                if (!app) return;
+                editAppId.value = app.id;
+                appNameInput.value = app.name || '';
+                appUrlInput.value = app.url || '';
+                appCategorySelect.value = app.category || 'tools';
+                appIconInput.value = app.icon || 'fa-cube';
+                appColorInput.value = app.color || 'from-blue-500 to-indigo-600';
+                editModalTitle.textContent = '編輯小程式';
+                deleteAppBtn.classList.remove('hidden');
+            } else {
+                // Add Mode
+                editAppId.value = '';
+                appNameInput.value = '';
+                appUrlInput.value = '';
+                appCategorySelect.value = 'tools';
+                appIconInput.value = 'fa-cube';
+                appColorInput.value = 'from-blue-500 to-indigo-600';
+                editModalTitle.textContent = '新增小程式';
+                deleteAppBtn.classList.add('hidden');
+            }
+
+            renderColorPicker();
+
+            // Show Modal
+            editAppModal.classList.remove('pointer-events-none', 'opacity-0');
+            editAppModal.classList.add('opacity-100');
+            editModalCard.classList.remove('scale-95');
+            editModalCard.classList.add('scale-100');
+        };
+
+        // Close Edit Modal
+        window.closeEditModal = function() {
+            editAppModal.classList.add('pointer-events-none', 'opacity-0');
+            editAppModal.classList.remove('opacity-100');
+            editModalCard.classList.remove('scale-100');
+            editModalCard.classList.add('scale-95');
+        };
+
+        // Handle Form Submit (Save / Update App)
+        window.handleFormSubmit = function(e) {
+            e.preventDefault();
+            const idVal = editAppId.value;
+            const name = appNameInput.value.trim();
+            const url = appUrlInput.value.trim();
+            const category = appCategorySelect.value;
+            const icon = appIconInput.value.trim() || 'fa-cube';
+            const color = appColorInput.value || 'from-blue-500 to-indigo-600';
+
+            if (!name) return;
+
+            if (idVal) {
+                // Update Existing
+                const index = MINI_APPS.findIndex(a => a.id == idVal);
+                if (index !== -1) {
+                    MINI_APPS[index] = { ...MINI_APPS[index], name, url, category, icon, color };
+                }
+            } else {
+                // Create New
+                const newApp = {
+                    id: Date.now(),
+                    name,
+                    url,
+                    category,
+                    icon,
+                    color
+                };
+                MINI_APPS.push(newApp);
+            }
+
+            saveAppsToStorage();
+            closeEditModal();
+            renderApps();
+        };
+
+        // Delete App
+        window.confirmDeleteApp = function() {
+            const idVal = editAppId.value;
+            if (!idVal) return;
+
+            if (confirm("確定要刪除此小程式嗎？")) {
+                MINI_APPS = MINI_APPS.filter(a => a.id != idVal);
+                favorites = favorites.filter(id => id != idVal);
+                localStorage.setItem('app_favorites', JSON.stringify(favorites));
+                saveAppsToStorage();
+                closeEditModal();
+                renderApps();
+            }
+        };
+
+        // Reset All Custom Data to Initial Default
+        window.resetToDefaultData = function() {
+            if (confirm("確定要將所有小程式網址與設定重置為初始預設值嗎？")) {
+                localStorage.removeItem('portal_custom_apps');
+                MINI_APPS = [...DEFAULT_MINI_APPS];
+                renderApps();
+            }
+        };
+
         // Category Selection
         window.selectCategory = function(catId) {
             currentCategory = catId;
@@ -327,7 +603,7 @@
             updateFavoriteBtnStyle();
             renderCategories();
             renderApps();
-        }
+        };
 
         // Toggle Favorites
         window.toggleFavorite = function(e, appId) {
@@ -339,7 +615,7 @@
             }
             localStorage.setItem('app_favorites', JSON.stringify(favorites));
             renderApps();
-        }
+        };
 
         // Toggle Favorites View Filter
         favoriteToggleBtn.addEventListener('click', () => {
@@ -388,10 +664,15 @@
             renderApps();
         });
 
-        // Open Simulated Mini App Modal
+        // Open Simulated Mini App Modal or External URL
         window.openApp = function(appId) {
             const app = MINI_APPS.find(a => a.id === appId);
             if (!app) return;
+
+            if (app.url && app.url.trim() !== '') {
+                window.open(app.url, '_blank');
+                return;
+            }
 
             const categoryObj = CATEGORIES.find(c => c.id === app.category);
 
@@ -399,10 +680,10 @@
             modalAppNameSpan.textContent = app.name;
             modalCategory.textContent = categoryObj ? categoryObj.name : '小程式';
             
-            modalIcon.className = `w-12 h-12 rounded-2xl bg-gradient-to-tr ${app.color} flex items-center justify-center text-white text-xl shadow-md`;
-            modalIcon.innerHTML = `<i class="fa-solid ${app.icon}"></i>`;
+            modalIcon.className = `w-12 h-12 rounded-2xl bg-gradient-to-tr ${app.color || 'from-blue-500 to-indigo-600'} flex items-center justify-center text-white text-xl shadow-md`;
+            modalIcon.innerHTML = `<i class="fa-solid ${app.icon || 'fa-cube'}"></i>`;
 
-            modalBodyIcon.className = `fa-solid ${app.icon}`;
+            modalBodyIcon.className = `fa-solid ${app.icon || 'fa-cube'}`;
 
             // Show Modal with Animation
             appModal.classList.remove('pointer-events-none', 'opacity-0');
@@ -411,7 +692,7 @@
             modalCard.classList.add('scale-100');
         };
 
-        // Close App Modal
+        // Close Launcher App Modal
         function closeModal() {
             appModal.classList.add('pointer-events-none', 'opacity-0');
             appModal.classList.remove('opacity-100');
@@ -423,6 +704,11 @@
         exitAppBtn.addEventListener('click', closeModal);
         appModal.addEventListener('click', (e) => {
             if (e.target === appModal) closeModal();
+        });
+
+        // Close Edit Modal on Backdrop click
+        editAppModal.addEventListener('click', (e) => {
+            if (e.target === editAppModal) closeEditModal();
         });
 
         // Initialize App Hub
