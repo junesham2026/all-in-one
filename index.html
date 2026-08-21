@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>沈老師的小程式一站通</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Microsoft JhengHei', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f6ff',
+                            100: '#e0edff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', 'Microsoft JhengHei', sans-serif;
+            background-color: #f8fafc;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .app-card {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .app-card:hover {
+            transform: translateY(-4px);
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col justify-between">
+
+    <div>
+        <!-- Header -->
+        <header class="bg-white/80 backdrop-blur-md sticky top-0 z-30 border-b border-slate-100 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    
+                    <!-- Logo / Portal Title -->
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+                            <i class="fa-solid font-bold fa-cubes text-xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">小程式中心</h1>
+                            <p class="text-xs text-slate-400 font-medium">Mini Apps Portal</p>
+                        </div>
+                    </div>
+
+                    <!-- Search Bar -->
+                    <div class="relative flex-1 max-w-md">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            placeholder="搜尋小程式名稱..." 
+                            class="w-full pl-10 pr-10 py-2.5 bg-slate-100/80 border border-transparent rounded-xl text-sm focus:outline-none focus:bg-white focus:border-blue-500 transition-all placeholder:text-slate-400"
+                        >
+                        <button id="clearSearch" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </button>
+                    </div>
+
+                    <!-- Right Quick Actions -->
+                    <div class="hidden sm:flex items-center space-x-2">
+                        <button id="favoriteToggleBtn" class="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium transition-all">
+                            <i class="fa-solid fa-heart text-rose-500"></i>
+                            <span>我的收藏</span>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
+            <!-- Category Filter Pills -->
+            <div class="flex items-center space-x-2 overflow-x-auto pb-4 scrollbar-none" id="categoryContainer">
+                <!-- Dynamically Populated Categories -->
+            </div>
+
+            <!-- Mini Apps Grid Container -->
+            <div id="appsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6 mt-6">
+                <!-- Dynamically Populated Cards -->
+            </div>
+
+            <!-- Empty State (When search/filter matches nothing) -->
+            <div id="emptyState" class="hidden flex-col items-center justify-center py-20 text-center">
+                <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center text-2xl mb-4">
+                    <i class="fa-solid fa-box-open"></i>
+                </div>
+                <h3 class="text-base font-semibold text-slate-700">找不到相關小程式</h3>
+                <p class="text-xs text-slate-400 mt-1">請嘗試搜尋其他關鍵字或切換分類</p>
+                <button id="resetFilterBtn" class="mt-4 px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition-all">
+                    重置所有條件
+                </button>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- App Launcher Modal (Simulated App Entry Screen) -->
+    <div id="appModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
+        <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden transform scale-95 transition-all duration-300" id="modalCard">
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div id="modalIcon" class="w-12 h-12 rounded-2xl flex items-center justify-center text-white text-xl shadow-md">
+                        <i class="fa-solid fa-cube"></i>
+                    </div>
+                    <div>
+                        <h2 id="modalTitle" class="text-lg font-bold text-slate-800">小程式名稱</h2>
+                        <span id="modalCategory" class="inline-block px-2 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-500 rounded-md">分類</span>
+                    </div>
+                </div>
+                <button id="closeModalBtn" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 hover:bg-slate-200 flex items-center justify-center transition-all">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Simulated App Interface -->
+            <div class="p-8 text-center bg-slate-50 min-h-[220px] flex flex-col items-center justify-center space-y-4">
+                <div class="w-16 h-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-2xl animate-bounce">
+                    <i id="modalBodyIcon" class="fa-solid fa-rocket"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-800">已進入 <span id="modalAppNameSpan" class="text-blue-600"></span> 小程式</h3>
+                    <p class="text-xs text-slate-400 mt-1">獨立功能介面載入完畢</p>
+                </div>
+            </div>
+
+            <!-- Modal Actions -->
+            <div class="p-4 bg-white border-t border-slate-100 flex justify-end space-x-3">
+                <button id="exitAppBtn" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-semibold shadow-md transition-all">
+                    <i class="fa-solid fa-arrow-left mr-1.5"></i> 離開小程式
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-100 py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center text-slate-400 text-xs">
+            <p>© 2026 小程式一站通首頁 portal. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Mini-Apps Data Source
+        const MINI_APPS = [
+            { id: 1, name: '空節搜尋器', category: 'tools', icon: 'fa-calculator', color: 'from-blue-500 to-indigo-600' },
+            { id: 2, name: '代課安排', category: 'productivity', icon: 'fa-list-check', color: 'from-emerald-500 to-teal-600' },
+            { id: 3, name: '調課安排', category: 'lifestyle', icon: 'fa-cloud-sun', color: 'from-sky-400 to-blue-600' },
+            { id: 4, name: '考試時間表', category: 'tools', icon: 'fa-arrow-right-arrow-left', color: 'from-violet-500 to-purple-600' },
+            { id: 5, name: '活動週時間表', category: 'finance', icon: 'fa-coins', color: 'from-amber-500 to-orange-600' },
+            { id: 6, name: '校服排隊系統', category: 'tools', icon: 'fa-dice', color: 'from-rose-500 to-pink-600' },
+            { id: 7, name: '工作提示器', category: 'productivity', icon: 'fa-stopwatch', color: 'from-red-500 to-rose-600' },
+            { id: 8, name: 'whatsform通知系統', category: 'finance', icon: 'fa-wallet', color: 'from-green-500 to-emerald-600' },
+            { id: 9, name: '待定', category: 'health', icon: 'fa-heart-pulse', color: 'from-pink-500 to-rose-500' },
+            { id: 10, name: '待定', category: 'tools', icon: 'fa-qrcode', color: 'from-slate-700 to-slate-900' },
+            { id: 11, name: '待定', category: 'productivity', icon: 'fa-note-sticky', color: 'from-yellow-400 to-amber-500' },
+            { id: 12, name: '待定', category: 'lifestyle', icon: 'fa-moon', color: 'from-indigo-600 to-slate-800' },
+            { id: 13, name: '待定', category: 'tools', icon: 'fa-key', color: 'from-cyan-500 to-blue-600' },
+            { id: 14, name: '待定', category: 'entertainment', icon: 'fa-wand-magic-sparkles', color: 'from-purple-600 to-indigo-700' },
+            { id: 15, name: '待定', category: 'entertainment', icon: 'fa-music', color: 'from-fuchsia-500 to-pink-600' },
+            { id: 16, name: '待定', category: 'lifestyle', icon: 'fa-calendar-check', color: 'from-teal-400 to-emerald-600' },
+            { id: 17, name: '待定', category: 'tools', icon: 'fa-palette', color: 'from-orange-400 to-rose-500' },
+            { id: 18, name: '待定', category: 'tools', icon: 'fa-gauge-high', color: 'from-blue-600 to-cyan-500' },
+            { id: 19, name: '待定', category: 'health', icon: 'fa-glass-water', color: 'from-sky-400 to-blue-500' },
+            { id: 20, name: '待定', category: 'entertainment', icon: 'fa-dharmachakra', color: 'from-purple-500 to-pink-500' }
+        ];
+
+        // Categories Configuration
+        const CATEGORIES = [
+            { id: 'all', name: '全部程式', icon: 'fa-border-all' },
+            { id: 'tools', name: '實用工具', icon: 'fa-wrench' },
+            { id: 'productivity', name: '工作效率', icon: 'fa-briefcase' },
+        
+        ];
+
+        // App State
+        let currentCategory = 'all';
+        let searchQuery = '';
+        let favorites = JSON.parse(localStorage.getItem('app_favorites') || '[]');
+        let showFavoritesOnly = false;
+
+        // DOM Elements
+        const appsGrid = document.getElementById('appsGrid');
+        const categoryContainer = document.getElementById('categoryContainer');
+        const searchInput = document.getElementById('searchInput');
+        const clearSearchBtn = document.getElementById('clearSearch');
+        const emptyState = document.getElementById('emptyState');
+        const resetFilterBtn = document.getElementById('resetFilterBtn');
+        const favoriteToggleBtn = document.getElementById('favoriteToggleBtn');
+
+        // Modal Elements
+        const appModal = document.getElementById('appModal');
+        const modalCard = document.getElementById('modalCard');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const exitAppBtn = document.getElementById('exitAppBtn');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalCategory = document.getElementById('modalCategory');
+        const modalIcon = document.getElementById('modalIcon');
+        const modalBodyIcon = document.getElementById('modalBodyIcon');
+        const modalAppNameSpan = document.getElementById('modalAppNameSpan');
+
+        // Render Category Tabs
+        function renderCategories() {
+            categoryContainer.innerHTML = CATEGORIES.map(cat => {
+                const isActive = currentCategory === cat.id && !showFavoritesOnly;
+                return `
+                    <button 
+                        onclick="selectCategory('${cat.id}')"
+                        class="px-4 py-2 rounded-xl text-xs font-semibold flex items-center space-x-2 whitespace-nowrap transition-all ${
+                            isActive 
+                                ? 'bg-slate-900 text-white shadow-md shadow-slate-900/10' 
+                                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
+                        }">
+                        <i class="fa-solid ${cat.icon}"></i>
+                        <span>${cat.name}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        // Render App Cards
+        function renderApps() {
+            let filtered = MINI_APPS;
+
+            // Apply Favorites Filter
+            if (showFavoritesOnly) {
+                filtered = filtered.filter(app => favorites.includes(app.id));
+            } else if (currentCategory !== 'all') {
+                // Apply Category Filter
+                filtered = filtered.filter(app => app.category === currentCategory);
+            }
+
+            // Apply Search Query Filter
+            if (searchQuery.trim() !== '') {
+                const query = searchQuery.toLowerCase().trim();
+                filtered = filtered.filter(app => app.name.toLowerCase().includes(query));
+            }
+
+            // Empty state check
+            if (filtered.length === 0) {
+                appsGrid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+            }
+
+            // Generate App Cards Grid
+            appsGrid.innerHTML = filtered.map(app => {
+                const isFav = favorites.includes(app.id);
+                return `
+                    <div class="app-card bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100 flex flex-col justify-between items-center text-center group relative overflow-hidden">
+                        
+                        <!-- Favorite Button (Top Right) -->
+                        <button 
+                            onclick="toggleFavorite(event, ${app.id})" 
+                            title="${isFav ? '取消收藏' : '加入收藏'}"
+                            class="absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+                                isFav ? 'text-rose-500 bg-rose-50' : 'text-slate-300 hover:text-rose-400 bg-transparent'
+                            }">
+                            <i class="fa-${isFav ? 'solid' : 'regular'} fa-heart text-xs"></i>
+                        </button>
+
+                        <!-- Icon Badge -->
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 my-2 rounded-2xl bg-gradient-to-tr ${app.color} flex items-center justify-center text-white text-2xl sm:text-3xl shadow-lg shadow-indigo-500/10 group-hover:scale-105 transition-transform duration-300">
+                            <i class="fa-solid ${app.icon}"></i>
+                        </div>
+
+                        <!-- App Name (No extra intro/description as requested) -->
+                        <h3 class="text-sm font-bold text-slate-800 my-2 truncate w-full px-1">
+                            ${app.name}
+                        </h3>
+
+                        <!-- Action Button: Enter Mini App -->
+                        <button 
+                            onclick="openApp(${app.id})" 
+                            class="w-full mt-2 py-2 px-3 bg-slate-100 hover:bg-blue-600 text-slate-700 hover:text-white rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center space-x-1.5 shadow-sm group-hover:bg-blue-600 group-hover:text-white">
+                            <span>進入程式</span>
+                            <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                        </button>
+
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Category Selection
+        window.selectCategory = function(catId) {
+            currentCategory = catId;
+            showFavoritesOnly = false;
+            updateFavoriteBtnStyle();
+            renderCategories();
+            renderApps();
+        }
+
+        // Toggle Favorites
+        window.toggleFavorite = function(e, appId) {
+            e.stopPropagation();
+            if (favorites.includes(appId)) {
+                favorites = favorites.filter(id => id !== appId);
+            } else {
+                favorites.push(appId);
+            }
+            localStorage.setItem('app_favorites', JSON.stringify(favorites));
+            renderApps();
+        }
+
+        // Toggle Favorites View Filter
+        favoriteToggleBtn.addEventListener('click', () => {
+            showFavoritesOnly = !showFavoritesOnly;
+            updateFavoriteBtnStyle();
+            renderCategories();
+            renderApps();
+        });
+
+        function updateFavoriteBtnStyle() {
+            if (showFavoritesOnly) {
+                favoriteToggleBtn.classList.add('bg-rose-50', 'border-rose-200', 'text-rose-600');
+            } else {
+                favoriteToggleBtn.classList.remove('bg-rose-50', 'border-rose-200', 'text-rose-600');
+            }
+        }
+
+        // Search Input Listener
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            if (searchQuery.length > 0) {
+                clearSearchBtn.classList.remove('hidden');
+            } else {
+                clearSearchBtn.classList.add('hidden');
+            }
+            renderApps();
+        });
+
+        // Clear Search
+        clearSearchBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            searchQuery = '';
+            clearSearchBtn.classList.add('hidden');
+            renderApps();
+        });
+
+        // Reset Filter
+        resetFilterBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            searchQuery = '';
+            currentCategory = 'all';
+            showFavoritesOnly = false;
+            clearSearchBtn.classList.add('hidden');
+            updateFavoriteBtnStyle();
+            renderCategories();
+            renderApps();
+        });
+
+        // Open Simulated Mini App Modal
+        window.openApp = function(appId) {
+            const app = MINI_APPS.find(a => a.id === appId);
+            if (!app) return;
+
+            const categoryObj = CATEGORIES.find(c => c.id === app.category);
+
+            modalTitle.textContent = app.name;
+            modalAppNameSpan.textContent = app.name;
+            modalCategory.textContent = categoryObj ? categoryObj.name : '小程式';
+            
+            modalIcon.className = `w-12 h-12 rounded-2xl bg-gradient-to-tr ${app.color} flex items-center justify-center text-white text-xl shadow-md`;
+            modalIcon.innerHTML = `<i class="fa-solid ${app.icon}"></i>`;
+
+            modalBodyIcon.className = `fa-solid ${app.icon}`;
+
+            // Show Modal with Animation
+            appModal.classList.remove('pointer-events-none', 'opacity-0');
+            appModal.classList.add('opacity-100');
+            modalCard.classList.remove('scale-95');
+            modalCard.classList.add('scale-100');
+        };
+
+        // Close App Modal
+        function closeModal() {
+            appModal.classList.add('pointer-events-none', 'opacity-0');
+            appModal.classList.remove('opacity-100');
+            modalCard.classList.remove('scale-100');
+            modalCard.classList.add('scale-95');
+        }
+
+        closeModalBtn.addEventListener('click', closeModal);
+        exitAppBtn.addEventListener('click', closeModal);
+        appModal.addEventListener('click', (e) => {
+            if (e.target === appModal) closeModal();
+        });
+
+        // Initialize App Hub
+        renderCategories();
+        renderApps();
+    </script>
+</body>
+</html>
