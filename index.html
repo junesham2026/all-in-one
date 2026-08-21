@@ -274,6 +274,25 @@
     </footer>
 
     <script>
+        // Category Definitions
+        const CATEGORIES = [
+            { id: 'all', name: '全部小程式', icon: 'fa-border-all' },
+            { id: 'tools', name: '實用工具', icon: 'fa-toolbox' },
+            { id: 'productivity', name: '工作效率', icon: 'fa-briefcase' }
+        ];
+
+        // Color Swatch Options for App Cards
+        const COLOR_SWATCHES = [
+            { val: 'from-blue-500 to-indigo-600', bg: 'bg-gradient-to-r from-blue-500 to-indigo-600' },
+            { val: 'from-emerald-500 to-teal-600', bg: 'bg-gradient-to-r from-emerald-500 to-teal-600' },
+            { val: 'from-sky-400 to-blue-600', bg: 'bg-gradient-to-r from-sky-400 to-blue-600' },
+            { val: 'from-violet-500 to-purple-600', bg: 'bg-gradient-to-r from-violet-500 to-purple-600' },
+            { val: 'from-amber-500 to-orange-600', bg: 'bg-gradient-to-r from-amber-500 to-orange-600' },
+            { val: 'from-rose-500 to-pink-600', bg: 'bg-gradient-to-r from-rose-500 to-pink-600' },
+            { val: 'from-red-500 to-rose-600', bg: 'bg-gradient-to-r from-red-500 to-rose-600' },
+            { val: 'from-green-500 to-emerald-600', bg: 'bg-gradient-to-r from-green-500 to-emerald-600' }
+        ];
+
         // Initial Default Mini-Apps Data Source
         const DEFAULT_MINI_APPS = [
             { id: 1, name: '空節搜尋器', category: 'tools', icon: 'fa-magnifying-glass', color: 'from-blue-500 to-indigo-600', url: 'https://junesham2026.github.io/free_lesson_lookup/' },
@@ -286,38 +305,32 @@
             { id: 8, name: 'whatsform通知系統', category: 'productivity', icon: 'fa-wallet', color: 'from-green-500 to-emerald-600', url: '' }
         ];
 
-        // Color Swatches Configuration
-        const COLOR_SWATCHES = [
-            { id: 'blue', val: 'from-blue-500 to-indigo-600', bg: 'bg-gradient-to-r from-blue-500 to-indigo-600' },
-            { id: 'emerald', val: 'from-emerald-500 to-teal-600', bg: 'bg-gradient-to-r from-emerald-500 to-teal-600' },
-            { id: 'sky', val: 'from-sky-400 to-blue-600', bg: 'bg-gradient-to-r from-sky-400 to-blue-600' },
-            { id: 'purple', val: 'from-violet-500 to-purple-600', bg: 'bg-gradient-to-r from-violet-500 to-purple-600' },
-            { id: 'amber', val: 'from-amber-500 to-orange-600', bg: 'bg-gradient-to-r from-amber-500 to-orange-600' },
-            { id: 'rose', val: 'from-rose-500 to-pink-600', bg: 'bg-gradient-to-r from-rose-500 to-pink-600' },
-            { id: 'teal', val: 'from-teal-400 to-emerald-600', bg: 'bg-gradient-to-r from-teal-400 to-emerald-600' },
-            { id: 'dark', val: 'from-slate-700 to-slate-900', bg: 'bg-gradient-to-r from-slate-700 to-slate-900' }
-        ];
-
-        // Categories Configuration
-        const CATEGORIES = [
-            { id: 'all', name: '全部程式', icon: 'fa-border-all' },
-            { id: 'tools', name: '實用工具', icon: 'fa-wrench' },
-            { id: 'productivity', name: '工作效率', icon: 'fa-briefcase' },
-        ];
-
-        // Load persistent or default app dataset
+        // Load persistent or default app dataset, ensuring default URLs are synced
         let MINI_APPS = loadSavedApps();
 
         function loadSavedApps() {
             const saved = localStorage.getItem('portal_custom_apps');
             if (saved) {
                 try {
-                    return JSON.parse(saved);
+                    const parsed = JSON.parse(saved);
+                    // Merge parsed apps with DEFAULT_MINI_APPS so default URLs update correctly
+                    return DEFAULT_MINI_APPS.map(defaultApp => {
+                        const userApp = parsed.find(a => a.id === defaultApp.id);
+                        if (userApp) {
+                            return {
+                                ...defaultApp,
+                                ...userApp,
+                                // If user saved empty URL for defaults, restore the default URL
+                                url: (userApp.url && userApp.url.trim() !== '') ? userApp.url : defaultApp.url
+                            };
+                        }
+                        return defaultApp;
+                    }).concat(parsed.filter(a => !DEFAULT_MINI_APPS.some(d => d.id === a.id)));
                 } catch(e) {
                     console.error("Failed to load saved apps", e);
                 }
             }
-            return [...DEFAULT_MINI_APPS];
+            return JSON.parse(JSON.stringify(DEFAULT_MINI_APPS));
         }
 
         function saveAppsToStorage() {
@@ -445,7 +458,7 @@
                     <div class="app-card bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100 flex flex-col justify-between items-center text-center group relative overflow-hidden">
                         
                         <!-- Quick Action Buttons (Top Left: Edit, Top Right: Favorite) -->
-                        <div class="absolute top-2 left-2 right-2 flex justify-between items-center pointer-events-auto">
+                        <div class="absolute top-2 left-2 right-2 flex justify-between items-center pointer-events-auto z-10">
                             <!-- Edit App Button -->
                             <button 
                                 onclick="openEditModal(event, ${app.id})" 
@@ -475,57 +488,54 @@
                             <h3 class="text-sm font-bold text-slate-800 truncate w-full">
                                 ${app.name}
                             </h3>
-                            ${hasUrl ? '<span class="text-[10px] text-blue-500 font-medium"><i class="fa-solid fa-arrow-up-right-from-square text-[9px] mr-1"></i>外部連結</span>' : '<span class="text-[10px] text-slate-400 font-medium">內建功能</span>'}
+                            ${hasUrl ? '<span class="text-[10px] text-blue-500 font-medium"><i class="fa-solid fa-arrow-up-right-from-square text-[9px] mr-1"></i>外部連結</span>' : '<span class="text-[10px] text-slate-400 font-medium">未設定網址</span>'}
                         </div>
 
-                        <!-- Action Button: Enter Mini App -->
-                        <button 
-                            onclick="openApp(${app.id})" 
-                            class="w-full mt-2 py-2 px-3 bg-slate-100 hover:bg-blue-600 text-slate-700 hover:text-white rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center space-x-1.5 shadow-sm group-hover:bg-blue-600 group-hover:text-white">
-                            <span>進入程式</span>
-                            <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                        </button>
+                        <!-- Action Button: Direct Link or Set URL -->
+                        ${hasUrl ? `
+                            <a 
+                                href="${app.url}" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                class="w-full mt-2 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center space-x-1.5 shadow-sm shadow-blue-500/20">
+                                <span>進入程式</span>
+                                <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                            </a>
+                        ` : `
+                            <button 
+                                onclick="openEditModal(event, ${app.id})" 
+                                class="w-full mt-2 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-center space-x-1 shadow-sm">
+                                <i class="fa-solid fa-plus text-[10px]"></i>
+                                <span>設定網址</span>
+                            </button>
+                        `}
 
                     </div>
                 `;
             }).join('');
         }
 
-        // Open Add / Edit Modal
-        window.openEditModal = function(e = null, appId = null) {
-            if (e) e.stopPropagation();
+        // Reset All Custom Data to Initial Default
+        window.resetToDefaultData = function() {
+            if (confirm("確定要將所有小程式網址與設定重置為初始預設值嗎？")) {
+                localStorage.removeItem('portal_custom_apps');
+                MINI_APPS = JSON.parse(JSON.stringify(DEFAULT_MINI_APPS));
+                renderApps();
+            }
+        };
 
-            if (appId) {
-                // Edit Mode
-                const app = MINI_APPS.find(a => a.id === appId);
-                if (!app) return;
-                editAppId.value = app.id;
-                appNameInput.value = app.name || '';
-                appUrlInput.value = app.url || '';
-                appCategorySelect.value = app.category || 'tools';
-                appIconInput.value = app.icon || 'fa-cube';
-                appColorInput.value = app.color || 'from-blue-500 to-indigo-600';
-                editModalTitle.textContent = '編輯小程式';
-                deleteAppBtn.classList.remove('hidden');
-            } else {
-                // Add Mode
-                editAppId.value = '';
-                appNameInput.value = '';
-                appUrlInput.value = '';
-                appCategorySelect.value = 'tools';
-                appIconInput.value = 'fa-cube';
-                appColorInput.value = 'from-blue-500 to-indigo-600';
-                editModalTitle.textContent = '新增小程式';
-                deleteAppBtn.classList.add('hidden');
+        // Open App Helper
+        window.openApp = function(appId) {
+            const app = MINI_APPS.find(a => a.id === appId);
+            if (!app) return;
+
+            if (app.url && app.url.trim() !== '') {
+                window.open(app.url, '_blank');
+                return;
             }
 
-            renderColorPicker();
-
-            // Show Modal
-            editAppModal.classList.remove('pointer-events-none', 'opacity-0');
-            editAppModal.classList.add('opacity-100');
-            editModalCard.classList.remove('scale-95');
-            editModalCard.classList.add('scale-100');
+            // Prompt user to enter URL if missing
+            openEditModal(null, appId);
         };
 
         // Close Edit Modal
@@ -534,6 +544,44 @@
             editAppModal.classList.remove('opacity-100');
             editModalCard.classList.remove('scale-100');
             editModalCard.classList.add('scale-95');
+        };
+
+        // Open Edit or Create App Modal
+        window.openEditModal = function(e, appId = null) {
+            if (e) e.stopPropagation();
+
+            const form = document.getElementById('appForm');
+            if (form) form.reset();
+
+            if (appId) {
+                const app = MINI_APPS.find(a => a.id === appId);
+                if (app) {
+                    editModalTitle.textContent = '編輯小程式';
+                    editAppId.value = app.id;
+                    appNameInput.value = app.name || '';
+                    appUrlInput.value = app.url || '';
+                    appCategorySelect.value = app.category || 'tools';
+                    appIconInput.value = app.icon || 'fa-cube';
+                    appColorInput.value = app.color || 'from-blue-500 to-indigo-600';
+                    deleteAppBtn.classList.remove('hidden');
+                }
+            } else {
+                editModalTitle.textContent = '新增小程式';
+                editAppId.value = '';
+                appNameInput.value = '';
+                appUrlInput.value = '';
+                appCategorySelect.value = 'tools';
+                appIconInput.value = 'fa-cube';
+                appColorInput.value = 'from-blue-500 to-indigo-600';
+                deleteAppBtn.classList.add('hidden');
+            }
+
+            renderColorPicker();
+
+            editAppModal.classList.remove('pointer-events-none', 'opacity-0');
+            editAppModal.classList.add('opacity-100');
+            editModalCard.classList.remove('scale-95');
+            editModalCard.classList.add('scale-100');
         };
 
         // Handle Form Submit (Save / Update App)
